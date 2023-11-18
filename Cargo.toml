@@ -1,0 +1,59 @@
+[package]
+name = "bevy-vr-test"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = "0.12.0"
+bevy_oxr = {version="0.1.0", default-features = false}
+openxr = { git = "https://github.com/Ralith/openxrs", features = ["mint"] }
+bevy_xpbd_3d = "0.3.2"
+
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+# This metadata is used by `cargo-apk` - `xbuild` uses the `manifest.yaml` instead.
+[package.metadata.android]
+package = "org.knexer.bevy_vr_test"
+build_targets = ["aarch64-linux-android"]
+runtime_libs = "runtime_libs"
+apk_name = "bevy_vr_test"
+# assets = "assets"
+# res = "assets/android-res"
+icon = "@mipmap/ic_launcher"
+label = "Bevy VR Test"
+strip = "strip"
+
+[package.metadata.android.sdk]
+target_sdk_version = 33
+
+[package.metadata.android.application.activity]
+theme = "@android:style/Theme.Black.NoTitleBar.Fullscreen"
+config_changes = "density|keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|uiMode"
+launch_mode = "singleTask"
+orientation = "landscape"
+resizeable_activity = false
+
+[[package.metadata.android.application.activity.intent_filter]]
+actions = ["android.intent.action.MAIN"]
+categories = [
+    "com.oculus.intent.category.VR",
+    "android.intent.category.LAUNCHER",
+]
+
+[package.metadata.android.signing.release]
+path = "./knexer.keystore"
+keystore_password = "potato-tomato"
