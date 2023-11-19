@@ -1,26 +1,21 @@
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
-use bevy::transform::components::Transform;
-use bevy_oxr::xr_input::debug_gizmos::OpenXrDebugRenderer;
-use bevy_oxr::xr_input::prototype_locomotion::{proto_locomotion, PrototypeLocomotionConfig};
-use bevy_oxr::xr_input::trackers::{
-    OpenXRController, OpenXRLeftController, OpenXRRightController, OpenXRTracker,
-};
+
 use bevy_oxr::DefaultXrPlugins;
 use bevy_xpbd_3d::prelude::*;
+use debug::DebugPlugin;
+use physics_hands::PhysicsHandsPlugin;
+
+mod debug;
+mod physics_hands;
 
 #[bevy_main]
 fn main() {
     App::new()
         .add_plugins(DefaultXrPlugins)
-        .add_plugins(OpenXrDebugRenderer)
-        .add_plugins(LogDiagnosticsPlugin::default())
-        .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(PhysicsPlugins::default())
+        .add_plugins(DebugPlugin)
+        .add_plugins(PhysicsHandsPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, proto_locomotion)
-        .add_systems(Startup, spawn_controllers_example)
-        .insert_resource(PrototypeLocomotionConfig::default())
         .run();
 }
 
@@ -68,26 +63,4 @@ fn setup(
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
     });
-    // camera
-    // commands.spawn((Camera3dBundle {
-    //     transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-    //     ..default()
-    // },));
-}
-
-fn spawn_controllers_example(mut commands: Commands) {
-    //left hand
-    commands.spawn((
-        OpenXRLeftController,
-        OpenXRController,
-        OpenXRTracker,
-        SpatialBundle::default(),
-    ));
-    //right hand
-    commands.spawn((
-        OpenXRRightController,
-        OpenXRController,
-        OpenXRTracker,
-        SpatialBundle::default(),
-    ));
 }
