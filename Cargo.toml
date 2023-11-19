@@ -1,24 +1,20 @@
 [package]
-name = "bevy-vr-test"
+name = "bevy_openxr_android"
 version = "0.1.0"
 edition = "2021"
+description = "Example for building an Android OpenXR app with Bevy"
+publish = false
+license = "MIT OR Apache-2.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "bevy_openxr_android"
+crate-type = ["rlib", "cdylib"]
+
 
 [dependencies]
-bevy = "0.12.0"
-bevy_oxr = {version="0.1.0", default-features = false}
+bevy = "0.12"
+bevy_oxr = { version="0.1.0", default-features = false }
 openxr = { git = "https://github.com/Ralith/openxrs", features = ["mint"] }
-bevy_xpbd_3d = "0.3.2"
-
-
-# Enable a small amount of optimization in debug mode
-[profile.dev]
-opt-level = 1
-
-# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
-[profile.dev.package."*"]
-opt-level = 3
 
 [profile.release]
 lto = "fat"
@@ -27,15 +23,19 @@ panic = "abort"
 
 # This metadata is used by `cargo-apk` - `xbuild` uses the `manifest.yaml` instead.
 [package.metadata.android]
-package = "org.knexer.bevy_vr_test"
+package = "org.bevyengine.example_openxr_android"
 build_targets = ["aarch64-linux-android"]
 runtime_libs = "runtime_libs"
-apk_name = "bevy_vr_test"
+apk_name = "bevyopenxr"
 # assets = "assets"
 # res = "assets/android-res"
 icon = "@mipmap/ic_launcher"
-label = "Bevy VR Test"
+label = "Bevy Openxr Android"
 strip = "strip"
+
+# [package.metadata.android.application]
+# icon = "@mipmap/ic_launcher"
+# label = "Bevy Example"
 
 [package.metadata.android.sdk]
 target_sdk_version = 33
@@ -54,6 +54,16 @@ categories = [
     "android.intent.category.LAUNCHER",
 ]
 
+# !! IMPORTANT !!
+#
+# When creating your own apps, make sure to generate your own keystore, rather than using our example one!
+# You can use `keytool` like so:
+# keytool -genkey -v -keystore my-release-key.keystore -keyalg RSA -keysize 2048 -validity 10000
+#
+# For more information on key signing and why it's so important, check out this article:
+# https://developer.android.com/studio/publish/app-signing
+#
+# !! IMPORTANT !!
 [package.metadata.android.signing.release]
 path = "./knexer.keystore"
 keystore_password = "potato-tomato"
