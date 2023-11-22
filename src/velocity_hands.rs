@@ -112,7 +112,7 @@ fn move_hands(
                 hand_global_transform.transform_point(controller_transform.translation());
             continue;
         }
-        velocity.0 = delta_position * hand.follow_strength;
+        velocity.0 = (delta_position * hand.follow_strength).into();
     }
 }
 
