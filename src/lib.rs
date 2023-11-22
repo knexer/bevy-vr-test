@@ -3,10 +3,11 @@ use bevy::prelude::*;
 use bevy_oxr::DefaultXrPlugins;
 use bevy_xpbd_3d::prelude::*;
 use debug::DebugPlugin;
-use physics_hands::PhysicsHandsPlugin;
+use velocity_hands::VelocityHandsPlugin;
 
 mod debug;
 mod physics_hands;
+mod velocity_hands;
 
 #[bevy_main]
 fn main() {
@@ -14,8 +15,9 @@ fn main() {
         .add_plugins(DefaultXrPlugins)
         .add_plugins(PhysicsPlugins::default())
         .insert_resource(SubstepCount(30))
+        .insert_resource(Gravity(Vec3::ZERO))
         .add_plugins(DebugPlugin)
-        .add_plugins(PhysicsHandsPlugin)
+        .add_plugins(VelocityHandsPlugin)
         .add_systems(Startup, setup)
         .run();
 }
