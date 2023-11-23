@@ -23,6 +23,7 @@ pub struct PhysicsHand {
     controller: Entity,
     follow_strength: f32,
     max_distance: f32,
+    rotation_follow_strength: f32,
 }
 
 fn setup(
@@ -45,10 +46,10 @@ fn setup(
             controller: left_controller,
             follow_strength: 30.0,
             max_distance: 0.75,
+            rotation_follow_strength: 10.0,
         },
         RigidBody::Dynamic,
-        ColliderDensity(0.0),
-        Mass(1.0),
+        ColliderDensity(1000.0),
         Collider::cuboid(0.1, 0.1, 0.1),
         PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
@@ -56,7 +57,6 @@ fn setup(
             transform: Transform::from_xyz(0.0, 0.1, 0.0),
             ..default()
         },
-        ExternalForce::default(),
         Name::new("Left Hand"),
     ));
 
@@ -75,10 +75,10 @@ fn setup(
             controller: right_controller,
             follow_strength: 30.0,
             max_distance: 0.75,
+            rotation_follow_strength: 30.0,
         },
         RigidBody::Dynamic,
-        ColliderDensity(0.0),
-        Mass(1.0),
+        ColliderDensity(1000.0),
         Collider::cuboid(0.1, 0.1, 0.1),
         PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
@@ -86,7 +86,6 @@ fn setup(
             transform: Transform::from_xyz(0.0, 0.1, 0.0),
             ..default()
         },
-        ExternalForce::default(),
         Name::new("Right Hand"),
     ));
 }
@@ -98,21 +97,46 @@ fn move_hands(
             &GlobalTransform,
             &mut Transform,
             &mut LinearVelocity,
+            &mut AngularVelocity,
         ),
         Without<OpenXRController>,
     >,
     controllers: Query<&GlobalTransform, With<OpenXRController>>,
 ) {
-    for (hand, hand_global_transform, mut hand_local_transform, mut velocity) in hands.iter_mut() {
+    for (
+        hand,
+        hand_global_transform,
+        mut hand_local_transform,
+        mut linear_velocity,
+        mut angular_velocity,
+    ) in hands.iter_mut()
+    {
+        let hand_global_transform = hand_global_transform.compute_transform();
         let controller_transform = controllers.get(hand.controller).unwrap();
-        let delta_position =
-            controller_transform.translation() - hand_global_transform.translation();
-        if delta_position.length() > hand.max_distance {
+        let controller_transform = controller_transform.compute_transform();
+
+        // Position tracking
+        let delta_position = controller_transform.translation - hand_global_transform.translation;
+        if delta_position.length() <= hand.max_distance {
+            linear_velocity.0 = (delta_position * hand.follow_strength).into();
+        } else {
             hand_local_transform.translation =
-                hand_global_transform.transform_point(controller_transform.translation());
-            continue;
+                hand_global_transform.transform_point(controller_transform.translation);
         }
-        velocity.0 = (delta_position * hand.follow_strength).into();
+
+        // Rotation tracking
+        let delta_rotation = shortest_rotation_between(
+            hand_global_transform.rotation,
+            controller_transform.rotation,
+        );
+        angular_velocity.0 = delta_rotation.to_scaled_axis() * hand.rotation_follow_strength;
+    }
+}
+
+fn shortest_rotation_between(from: Quat, to: Quat) -> Quat {
+    match from.dot(to) > 0.0 {
+        true => to * from.inverse(),
+        false => to * -from.inverse(),
     }
 }
 

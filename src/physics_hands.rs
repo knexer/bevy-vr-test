@@ -1,4 +1,4 @@
-use bevy::{math::DVec3, prelude::*};
+use bevy::prelude::*;
 use bevy_oxr::xr_input::trackers::{
     update_open_xr_controllers, OpenXRController, OpenXRLeftController, OpenXRRightController,
     OpenXRTracker,
@@ -178,11 +178,11 @@ fn move_hands(
                 controller.translation()
             );
             pid_controller.reset();
-            force.set_force(DVec3::ZERO);
+            force.set_force(Vec3::ZERO);
             local_transform.translation = controller.translation();
             // position.0 = controller.translation();
-            linear_velocity.0 = DVec3::ZERO;
-            angular_velocity.0 = DVec3::ZERO;
+            linear_velocity.0 = Vec3::ZERO;
+            angular_velocity.0 = Vec3::ZERO;
         } else {
             let applied_force = pid_controller.update(error, time.delta_seconds());
             force.set_force(applied_force.into());

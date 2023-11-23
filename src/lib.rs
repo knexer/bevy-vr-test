@@ -1,4 +1,4 @@
-use bevy::{math::DVec3, prelude::*};
+use bevy::prelude::*;
 
 use bevy_oxr::{
     input::XrInput,
@@ -20,7 +20,11 @@ fn main() {
         .add_plugins(DefaultXrPlugins)
         .add_plugins(PhysicsPlugins::default())
         .insert_resource(SubstepCount(30))
-        .insert_resource(Gravity(DVec3::new(0.0, -9.8, 0.0)))
+        .insert_resource(SleepingThreshold {
+            linear: -0.01,
+            angular: -0.01,
+        })
+        .insert_resource(Gravity(Vec3::new(0.0, -9.8, 0.0)))
         .add_plugins(DebugPlugin)
         .add_plugins(VelocityHandsPlugin)
         .add_systems(Startup, setup)
@@ -43,7 +47,7 @@ fn setup(
             ..default()
         },
         RigidBody::Static,
-        Collider::halfspace(DVec3::Y),
+        Collider::halfspace(Vec3::Y),
     ));
     // cube
     commands.spawn((
@@ -64,6 +68,7 @@ fn setup(
             transform: Transform::from_xyz(0.0, 0.5, 1.0),
             ..default()
         },
+        ColliderDensity(1000.0),
         RigidBody::Dynamic,
         Collider::cuboid(0.1, 0.1, 0.1),
     ));
@@ -108,6 +113,7 @@ fn spawn_cube(
                 transform: Transform::from_xyz(0.0, 0.5, 1.0),
                 ..default()
             },
+            ColliderDensity(1000.0),
             RigidBody::Dynamic,
             Collider::cuboid(0.1, 0.1, 0.1),
         ));

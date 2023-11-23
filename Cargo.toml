@@ -14,7 +14,7 @@ crate-type = ["rlib", "cdylib"]
 [dependencies]
 bevy = "0.12"
 bevy_oxr = { version="0.1.0", default-features = false }
-bevy_xpbd_3d = {version = "0.3.2",default-features = false, features=["3d", "f64"]}
+bevy_xpbd_3d = "0.3.2"
 openxr = { git = "https://github.com/Ralith/openxrs", features = ["mint"] }
 
 [profile.release]
