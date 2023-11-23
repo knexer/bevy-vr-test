@@ -1,15 +1,12 @@
 use bevy::prelude::*;
-use bevy_oxr::xr_input::trackers::{
-    update_open_xr_controllers, OpenXRController, OpenXRLeftController, OpenXRRightController,
-    OpenXRTracker,
-};
+use bevy_oxr::xr_input::trackers::{update_open_xr_controllers, OpenXRController};
 use bevy_xpbd_3d::prelude::*;
 
 pub struct VelocityHandsPlugin;
 
 impl Plugin for VelocityHandsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup).add_systems(
+        app.add_systems(
             Update,
             move_hands
                 .after(update_open_xr_controllers)
@@ -20,74 +17,10 @@ impl Plugin for VelocityHandsPlugin {
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct PhysicsHand {
-    controller: Entity,
-    follow_strength: f32,
-    max_distance: f32,
-    rotation_follow_strength: f32,
-}
-
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    //left hand
-    let left_controller = commands
-        .spawn((
-            OpenXRLeftController,
-            OpenXRController,
-            OpenXRTracker,
-            SpatialBundle::default(),
-            Name::new("Left Controller"),
-        ))
-        .id();
-    commands.spawn((
-        PhysicsHand {
-            controller: left_controller,
-            follow_strength: 30.0,
-            max_distance: 0.75,
-            rotation_follow_strength: 10.0,
-        },
-        RigidBody::Dynamic,
-        ColliderDensity(1000.0),
-        Collider::cuboid(0.1, 0.1, 0.1),
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
-            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 0.1, 0.0),
-            ..default()
-        },
-        Name::new("Left Hand"),
-    ));
-
-    //right hand
-    let right_controller = commands
-        .spawn((
-            OpenXRRightController,
-            OpenXRController,
-            OpenXRTracker,
-            SpatialBundle::default(),
-            Name::new("Right Controller"),
-        ))
-        .id();
-    commands.spawn((
-        PhysicsHand {
-            controller: right_controller,
-            follow_strength: 30.0,
-            max_distance: 0.75,
-            rotation_follow_strength: 30.0,
-        },
-        RigidBody::Dynamic,
-        ColliderDensity(1000.0),
-        Collider::cuboid(0.1, 0.1, 0.1),
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
-            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 0.1, 0.0),
-            ..default()
-        },
-        Name::new("Right Hand"),
-    ));
+    pub controller: Entity,
+    pub follow_strength: f32,
+    pub max_distance: f32,
+    pub rotation_follow_strength: f32,
 }
 
 fn move_hands(
@@ -139,18 +72,3 @@ fn shortest_rotation_between(from: Quat, to: Quat) -> Quat {
         false => to * -from.inverse(),
     }
 }
-
-// Brainstorming: what's the strategy here?
-// First question - what are the requirements?
-// We need to support physical interactions with objects in the scene. Generally, this means
-// applying forces. These forces can be applied in two ways:
-// 1. By pushing the hand against the object, e.g. punching/slapping
-// 2. By grabbing the object, which creates a joint between the hand and the object
-
-// For this to make sense, the hand itself must be a physics object, subject to forces from the
-// environment. Thus the hand must be dynamic rigidbody, and we cannot control its pose directly.
-// Instead, we must apply forces to it to bring it towards the desired pose.
-
-// So in summary we'll have the following structure:
-// 1. A controller entity, which is a kinematic rigidbody with no collider, user-controlled.
-// 2. A hand entity, which is a dynamic rigidbody with a collider, trailing behind the controller.
