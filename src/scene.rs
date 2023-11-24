@@ -5,9 +5,9 @@ use bevy_oxr::xr_input::trackers::{
 use bevy_xpbd_3d::prelude::*;
 
 use crate::{
-    grabber::{Grabber, GrabberState, GrabbingLayers},
+    grabber::{Grabber, GrabberState},
     velocity_hands::PhysicsHand,
-    LeftGrabberId,
+    Layer, LeftGrabberId,
 };
 
 pub struct ScenePlugin;
@@ -57,7 +57,7 @@ fn setup(
         ColliderDensity(1000.0),
         RigidBody::Dynamic,
         Collider::cuboid(0.1, 0.1, 0.1),
-        CollisionLayers::new([GrabbingLayers::Grabbable], []),
+        CollisionLayers::new([Layer::Grabbable, Layer::Default], [Layer::Default]),
     ));
     // light
     commands.spawn(PointLightBundle {
@@ -98,10 +98,7 @@ fn spawn_player(
             RigidBody::Dynamic,
             ColliderDensity(1000.0),
             Collider::cuboid(0.1, 0.05, 0.1),
-            CollisionLayers::new(
-                [GrabbingLayers::Hand],
-                [GrabbingLayers::Hand, GrabbingLayers::Grabbable],
-            ),
+            CollisionLayers::new([Layer::Hand, Layer::Default], [Layer::Default]),
             PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Box::new(0.1, 0.05, 0.1))),
                 material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
@@ -118,7 +115,7 @@ fn spawn_player(
                         SpatialBundle::from_transform(Transform::from_xyz(0.0, -0.05, 0.0)),
                         Grabber {
                             radius: 0.1,
-                            grabbable_layers: CollisionLayers::new([], [GrabbingLayers::Grabbable]),
+                            grabbable_layer_mask: Layer::Grabbable.to_bits(),
                             state: GrabberState::Idle,
                         },
                         Name::new("Grab Point"),
@@ -152,10 +149,7 @@ fn spawn_player(
             RigidBody::Dynamic,
             ColliderDensity(1000.0),
             Collider::cuboid(0.1, 0.05, 0.1),
-            CollisionLayers::new(
-                [GrabbingLayers::Hand],
-                [GrabbingLayers::Hand, GrabbingLayers::Grabbable],
-            ),
+            CollisionLayers::new([Layer::Hand, Layer::Default], [Layer::Default]),
             PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Box::new(0.1, 0.05, 0.1))),
                 material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
@@ -170,7 +164,7 @@ fn spawn_player(
                 SpatialBundle::from_transform(Transform::from_xyz(0.0, -0.05, 0.0)),
                 Grabber {
                     radius: 0.1,
-                    grabbable_layers: CollisionLayers::new([], [GrabbingLayers::Grabbable]),
+                    grabbable_layer_mask: Layer::Grabbable.to_bits(),
                     state: GrabberState::Idle,
                 },
                 Name::new("Grab Point"),

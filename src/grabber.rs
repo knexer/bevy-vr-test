@@ -11,14 +11,8 @@ pub enum GrabberState {
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Grabber {
     pub radius: f32,
-    pub grabbable_layers: CollisionLayers,
+    pub grabbable_layer_mask: u32,
     pub state: GrabberState,
-}
-
-#[derive(PhysicsLayer)]
-pub enum GrabbingLayers {
-    Hand,
-    Grabbable,
 }
 
 #[derive(Event)]
@@ -56,7 +50,7 @@ fn start_grab(
             &Collider::ball(grabber.radius),
             transform.translation,
             transform.rotation,
-            SpatialQueryFilter::new().with_masks_from_bits(grabber.grabbable_layers.masks_bits()),
+            SpatialQueryFilter::new().with_masks_from_bits(grabber.grabbable_layer_mask),
         );
 
         // TODO For now just delete it to test what we have so far

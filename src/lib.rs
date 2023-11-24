@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use bevy_oxr::DefaultXrPlugins;
 use bevy_xpbd_3d::prelude::*;
-use grabber::{GrabbingLayers, StartGrabEvent};
+use grabber::StartGrabEvent;
 use input::InputState;
 
 mod debug;
@@ -31,6 +31,13 @@ fn main() {
         .run();
 }
 
+#[derive(PhysicsLayer)]
+pub enum Layer {
+    Default,
+    Grabbable,
+    Hand,
+}
+
 // spawn a cube when the b or y button is pressed
 fn spawn_cube(
     input_state: Res<InputState>,
@@ -50,7 +57,7 @@ fn spawn_cube(
             ColliderDensity(1000.0),
             RigidBody::Dynamic,
             Collider::cuboid(0.1, 0.1, 0.1),
-            CollisionLayers::new([GrabbingLayers::Grabbable], []),
+            CollisionLayers::new([Layer::Grabbable, Layer::Default], [Layer::Default]),
         ));
     }
 }
