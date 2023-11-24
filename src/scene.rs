@@ -1,13 +1,14 @@
 use bevy::prelude::*;
-use bevy_oxr::xr_input::trackers::{
-    OpenXRController, OpenXRLeftController, OpenXRRightController, OpenXRTracker,
+use bevy_oxr::xr_input::{
+    trackers::{OpenXRController, OpenXRLeftController, OpenXRRightController, OpenXRTracker},
+    Hand,
 };
 use bevy_xpbd_3d::prelude::*;
 
 use crate::{
     grabber::{Grabber, GrabberState},
     velocity_hands::PhysicsHand,
-    Layer, LeftGrabberId,
+    Layer,
 };
 
 pub struct ScenePlugin;
@@ -76,7 +77,6 @@ fn spawn_player(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mut id: Option<Entity> = None;
     //left hand
     let left_controller = commands
         .spawn((
@@ -109,24 +109,17 @@ fn spawn_player(
         ))
         .with_children(|parent| {
             // grab point
-            id = Some(
-                parent
-                    .spawn((
-                        SpatialBundle::from_transform(Transform::from_xyz(0.0, -0.05, 0.0)),
-                        Grabber {
-                            radius: 0.1,
-                            grabbable_layer_mask: Layer::Grabbable.to_bits(),
-                            state: GrabberState::Idle,
-                        },
-                        Name::new("Grab Point"),
-                    ))
-                    .id(),
-            );
+            parent.spawn((
+                SpatialBundle::from_transform(Transform::from_xyz(0.0, -0.05, 0.0)),
+                Grabber {
+                    hand: Hand::Left,
+                    radius: 0.1,
+                    grabbable_layer_mask: Layer::Grabbable.to_bits(),
+                    state: GrabberState::Idle,
+                },
+                Name::new("Left Grab Point"),
+            ));
         });
-    match id {
-        Some(id) => commands.insert_resource(LeftGrabberId(id)),
-        None => panic!("Failed to spawn left hand grabber"),
-    };
 
     //right hand
     let right_controller = commands
@@ -163,11 +156,12 @@ fn spawn_player(
             parent.spawn((
                 SpatialBundle::from_transform(Transform::from_xyz(0.0, -0.05, 0.0)),
                 Grabber {
+                    hand: Hand::Right,
                     radius: 0.1,
                     grabbable_layer_mask: Layer::Grabbable.to_bits(),
                     state: GrabberState::Idle,
                 },
-                Name::new("Grab Point"),
+                Name::new("Right Grab Point"),
             ));
         });
 }

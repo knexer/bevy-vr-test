@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_oxr::xr_input::Hand;
 use bevy_xpbd_3d::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -10,6 +11,7 @@ pub enum GrabberState {
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Grabber {
+    pub hand: Hand,
     pub radius: f32,
     pub grabbable_layer_mask: u32,
     pub state: GrabberState,
@@ -17,7 +19,7 @@ pub struct Grabber {
 
 #[derive(Event)]
 pub struct StartGrabEvent {
-    pub grabber: Entity,
+    pub hand: Hand,
 }
 
 pub struct GrabberPlugin;
@@ -43,7 +45,12 @@ fn start_grab(
     spatial_query: SpatialQuery,
 ) {
     for event in grab_events.read() {
-        let (transform, mut grabber) = grabbers.get_mut(event.grabber).unwrap();
+        let (transform, mut grabber) = grabbers
+            .iter_mut()
+            .filter(|(_, grabber)| grabber.hand == event.hand)
+            .next()
+            .unwrap();
+
         let transform = transform.compute_transform();
         // Cast a sphere to find a grabbable object within the grabber's radius
         let candidates = spatial_query.shape_intersections(
