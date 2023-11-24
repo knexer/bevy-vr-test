@@ -99,9 +99,9 @@ fn update_grabbing_grabbers(
             SpatialQueryFilter::new().with_masks_from_bits(grabber.grabbable_layer_mask),
         );
 
-        let distance_to = |candidate: Entity| -> (f32, Vec3) {
+        let distance_to = |candidate: &Entity| -> (Entity, f32, Vec3) {
             let test_collider = Collider::ball(0.0);
-            let (cand_collider, cand_transform) = colliders.get(candidate).unwrap();
+            let (cand_collider, cand_transform) = colliders.get(*candidate).unwrap();
             let cand_transform = cand_transform.compute_transform();
             let closest_points = closest_points(
                 &test_collider,
@@ -122,26 +122,26 @@ fn update_grabbing_grabbers(
 
             let sq_distance = transform.translation.distance_squared(closest_point);
 
-            (sq_distance, closest_point)
+            (*candidate, sq_distance, closest_point)
         };
 
         if let Some((closest_candidate, _, closest_point)) = candidates
             .iter()
-            .map(|candidate| {
-                let (sq_distance, closest_point) = distance_to(*candidate);
-                (candidate, sq_distance, closest_point)
-            })
+            .map(distance_to)
             .min_by(|(_, d1, _), (_, d2, _)| d1.partial_cmp(d2).unwrap())
         {
             for (entity, mut grabbable) in grabbable.iter_mut() {
                 grabbable.grabbed_by.retain(|e| *e != grabber_entity);
-                if entity == *closest_candidate {
+                if entity == closest_candidate {
                     grabbable.grabbed_by.push(grabber_entity);
                     break;
                 }
             }
-            grabber.state = GrabberState::Grabbing(Some((*closest_candidate, closest_point)));
+            grabber.state = GrabberState::Grabbing(Some((closest_candidate, closest_point)));
         } else {
+            for (_, mut grabbable) in grabbable.iter_mut() {
+                grabbable.grabbed_by.retain(|e| *e != grabber_entity);
+            }
             grabber.state = GrabberState::Grabbing(None);
         }
     }
