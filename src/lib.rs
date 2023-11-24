@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use bevy_oxr::{xr_input::Hand, DefaultXrPlugins};
 use bevy_xpbd_3d::prelude::*;
-use grabber::StartGrabEvent;
+use grabber::{EndGrabEvent, StartGrabEvent};
 use input::InputState;
 
 mod debug;
@@ -20,12 +20,13 @@ fn main() {
             linear: -0.01,
             angular: -0.01,
         })
+        .insert_resource(Gravity(Vec3::new(0.0, -0.1, 0.0)))
         .add_plugins(debug::DebugPlugin)
         .add_plugins(scene::ScenePlugin)
         .add_plugins(velocity_hands::VelocityHandsPlugin)
         .add_plugins(grabber::GrabberPlugin)
         .add_plugins(input::InputPlugin)
-        .add_systems(Update, (spawn_cube, trigger_grabs))
+        .add_systems(Update, (spawn_cube, start_grabs, end_grabs))
         .run();
 }
 
@@ -60,15 +61,22 @@ fn spawn_cube(
     }
 }
 
-fn trigger_grabs(
-    input_state: Res<InputState>,
-    mut grab_events_writer: EventWriter<StartGrabEvent>,
-) {
+fn start_grabs(input_state: Res<InputState>, mut grab_events_writer: EventWriter<StartGrabEvent>) {
     if input_state.left_trigger.value > 0.5 && input_state.left_trigger.prev_value <= 0.5 {
         grab_events_writer.send(StartGrabEvent { hand: Hand::Left });
     }
 
     if input_state.right_trigger.value > 0.5 && input_state.right_trigger.prev_value <= 0.5 {
         grab_events_writer.send(StartGrabEvent { hand: Hand::Right });
+    }
+}
+
+fn end_grabs(input_state: Res<InputState>, mut grab_events_writer: EventWriter<EndGrabEvent>) {
+    if input_state.left_trigger.value <= 0.5 && input_state.left_trigger.prev_value > 0.5 {
+        grab_events_writer.send(EndGrabEvent { hand: Hand::Left });
+    }
+
+    if input_state.right_trigger.value <= 0.5 && input_state.right_trigger.prev_value > 0.5 {
+        grab_events_writer.send(EndGrabEvent { hand: Hand::Right });
     }
 }
