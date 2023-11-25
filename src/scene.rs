@@ -7,7 +7,7 @@ use bevy_xpbd_3d::prelude::*;
 
 use crate::{
     vr_hands::grabber::{Grabbable, Grabber, GrabberState},
-    vr_hands::velocity_hands::PhysicsHand,
+    vr_hands::velocity_tracking::VelocityTracked,
     Layer,
 };
 
@@ -93,8 +93,8 @@ fn spawn_player(
         .id();
     commands
         .spawn((
-            PhysicsHand {
-                controller: left_controller,
+            VelocityTracked {
+                follow_target: left_controller,
                 follow_strength: 30.0,
                 max_distance: 0.75,
                 rotation_follow_strength: 30.0,
@@ -138,8 +138,8 @@ fn spawn_player(
         .id();
     commands
         .spawn((
-            PhysicsHand {
-                controller: right_controller,
+            VelocityTracked {
+                follow_target: right_controller,
                 follow_strength: 30.0,
                 max_distance: 0.75,
                 rotation_follow_strength: 30.0,
