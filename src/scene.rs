@@ -6,7 +6,7 @@ use bevy_oxr::xr_input::{
 use bevy_xpbd_3d::prelude::*;
 
 use crate::{
-    grabber::{Grabber, GrabberState},
+    grabber::{Grabbable, Grabber, GrabberState},
     velocity_hands::PhysicsHand,
     Layer,
 };
@@ -35,6 +35,7 @@ fn setup(
         },
         RigidBody::Static,
         Collider::halfspace(Vec3::Y),
+        CollisionLayers::new([Layer::Default], [Layer::Default]),
     ));
     // cube
     commands.spawn((
@@ -46,6 +47,7 @@ fn setup(
         },
         RigidBody::Static,
         Collider::cuboid(0.1, 0.1, 0.1),
+        CollisionLayers::new([Layer::Default], [Layer::Default]),
     ));
     // cube
     commands.spawn((
@@ -59,6 +61,8 @@ fn setup(
         RigidBody::Dynamic,
         Collider::cuboid(0.1, 0.1, 0.1),
         CollisionLayers::new([Layer::Grabbable, Layer::Default], [Layer::Default]),
+        Grabbable { grabbed_by: vec![] },
+        Name::new("Grabbable Cube"),
     ));
     // light
     commands.spawn(PointLightBundle {
@@ -113,7 +117,8 @@ fn spawn_player(
                 SpatialBundle::from_transform(Transform::from_xyz(0.0, -0.05, 0.0)),
                 Grabber {
                     hand: Hand::Left,
-                    radius: 0.1,
+                    search_radius: 0.1,
+                    grab_tolerance: 0.02,
                     grabbable_layer_mask: Layer::Grabbable.to_bits(),
                     state: GrabberState::Idle,
                 },
@@ -157,7 +162,8 @@ fn spawn_player(
                 SpatialBundle::from_transform(Transform::from_xyz(0.0, -0.05, 0.0)),
                 Grabber {
                     hand: Hand::Right,
-                    radius: 0.1,
+                    search_radius: 0.1,
+                    grab_tolerance: 0.02,
                     grabbable_layer_mask: Layer::Grabbable.to_bits(),
                     state: GrabberState::Idle,
                 },

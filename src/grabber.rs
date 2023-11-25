@@ -9,13 +9,14 @@ use bevy_xpbd_3d::{
 pub enum GrabberState {
     Idle,
     Grabbing(Option<(Entity, Vec3)>),
-    Grabbed(Entity),
+    Grabbed(Entity, Entity),
 }
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Grabber {
     pub hand: Hand,
-    pub radius: f32,
+    pub search_radius: f32,
+    pub grab_tolerance: f32,
     pub grabbable_layer_mask: u32,
     pub state: GrabberState,
 }
@@ -47,6 +48,7 @@ impl Plugin for GrabberPlugin {
                     (handle_grab_start, handle_grab_end),
                     update_grabbing_grabbers,
                     show_grab_point_gizmos,
+                    grab_when_close_enough,
                 )
                     .chain(),
             );
@@ -93,7 +95,7 @@ fn update_grabbing_grabbers(
         let transform = transform.compute_transform();
         // Cast a sphere to find a grabbable object within the grabber's radius
         let candidates = spatial_query.shape_intersections(
-            &Collider::ball(grabber.radius),
+            &Collider::ball(grabber.search_radius),
             transform.translation,
             transform.rotation,
             SpatialQueryFilter::new().with_masks_from_bits(grabber.grabbable_layer_mask),
@@ -110,7 +112,7 @@ fn update_grabbing_grabbers(
                 &cand_collider,
                 cand_transform.translation,
                 cand_transform.rotation,
-                grabber.radius,
+                grabber.search_radius,
             )
             .unwrap();
 
@@ -147,7 +149,46 @@ fn update_grabbing_grabbers(
     }
 }
 
+fn grab_when_close_enough(
+    mut commands: Commands,
+    mut grabbers: Query<(Entity, &GlobalTransform, &mut Grabber)>,
+    transforms: Query<&GlobalTransform>,
+    children: Query<&Parent>,
+    rbs: Query<(), With<RigidBody>>,
+) {
+    for (grabber_entity, grabber_transform, mut grabber) in grabbers.iter_mut() {
+        if let GrabberState::Grabbing(Some((grabbed_entity, closest_point))) = grabber.state {
+            if grabber_transform.translation().distance(closest_point) < grabber.grab_tolerance {
+                let joint_config_for = |mut entity: Entity| -> (Entity, Vec3) {
+                    while !rbs.get(entity).is_ok() {
+                        entity = children.get(entity).unwrap().get();
+                    }
+                    let transform = transforms.get(entity).unwrap();
+                    let local_anchor = transform.affine().inverse().transform_point(closest_point);
+                    (entity, local_anchor)
+                };
+
+                let (grabber_entity, grabber_local_anchor) = joint_config_for(grabber_entity);
+                let (grabbed_entity, grabbed_local_anchor) = joint_config_for(grabbed_entity);
+
+                // Create a joint between the grabber and the grabbed object
+                let joint_id = commands
+                    .spawn((
+                        FixedJoint::new(grabber_entity, grabbed_entity)
+                            .with_local_anchor_1(grabber_local_anchor)
+                            .with_local_anchor_2(grabbed_local_anchor),
+                        Name::new("Grab Joint"),
+                    ))
+                    .id();
+
+                grabber.state = GrabberState::Grabbed(grabbed_entity, joint_id);
+            }
+        }
+    }
+}
+
 fn handle_grab_end(
+    mut commands: Commands,
     mut grab_events: EventReader<EndGrabEvent>,
     mut grabbers: Query<(Entity, &mut Grabber)>,
     mut grabbable: Query<&mut Grabbable>,
@@ -165,18 +206,19 @@ fn handle_grab_end(
         );
 
         let grabbed_entity = match grabber.state {
-            GrabberState::Grabbed(entity) | GrabberState::Grabbing(Some((entity, _))) => {
+            GrabberState::Grabbed(entity, joint) => {
+                commands.entity(joint).despawn_recursive();
                 Some(entity)
             }
+            GrabberState::Grabbing(Some((entity, _))) => Some(entity),
             GrabberState::Grabbing(None) => None,
             GrabberState::Idle => continue,
         };
 
         grabber.state = GrabberState::Idle;
         if let Some(grabbed_entity) = grabbed_entity {
-            if let Ok(mut grabbable) = grabbable.get_mut(grabbed_entity) {
-                grabbable.grabbed_by.retain(|e| *e != grabber_entity);
-            }
+            let mut grabbable = grabbable.get_mut(grabbed_entity).unwrap();
+            grabbable.grabbed_by.retain(|e| *e != grabber_entity);
         }
     }
 }

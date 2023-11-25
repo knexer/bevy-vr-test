@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use bevy_oxr::{xr_input::Hand, DefaultXrPlugins};
 use bevy_xpbd_3d::prelude::*;
-use grabber::{EndGrabEvent, StartGrabEvent};
+use grabber::{EndGrabEvent, Grabbable, StartGrabEvent};
 use input::InputState;
 
 mod debug;
@@ -57,6 +57,8 @@ fn spawn_cube(
             RigidBody::Dynamic,
             Collider::cuboid(0.1, 0.1, 0.1),
             CollisionLayers::new([Layer::Grabbable, Layer::Default], [Layer::Default]),
+            Grabbable { grabbed_by: vec![] },
+            Name::new("Grabbable Cube"),
         ));
     }
 }
