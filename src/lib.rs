@@ -6,6 +6,7 @@ use grabber::{EndGrabEvent, Grabbable, StartGrabEvent};
 use input::InputState;
 
 mod debug;
+mod fixed_joint_2;
 mod grabber;
 mod input;
 mod scene;
@@ -25,6 +26,7 @@ fn main() {
         .add_plugins(scene::ScenePlugin)
         .add_plugins(velocity_hands::VelocityHandsPlugin)
         .add_plugins(grabber::GrabberPlugin)
+        .add_plugins(fixed_joint_2::FixedJoint2Plugin)
         .add_plugins(input::InputPlugin)
         .add_systems(Update, (spawn_cube, start_grabs, end_grabs))
         .run();
