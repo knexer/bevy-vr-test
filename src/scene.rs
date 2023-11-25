@@ -6,8 +6,8 @@ use bevy_oxr::xr_input::{
 use bevy_xpbd_3d::prelude::*;
 
 use crate::{
-    grabber::{Grabbable, Grabber, GrabberState},
-    velocity_hands::PhysicsHand,
+    vr_hands::grabber::{Grabbable, Grabber, GrabberState},
+    vr_hands::velocity_hands::PhysicsHand,
     Layer,
 };
 

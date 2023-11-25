@@ -5,7 +5,7 @@ use bevy_xpbd_3d::{
     prelude::*,
 };
 
-use crate::fixed_joint_2::FixedJoint2;
+use super::fixed_joint_2::FixedJoint2;
 
 #[derive(Debug, Clone, Copy)]
 pub enum GrabberState {

@@ -2,15 +2,13 @@ use bevy::prelude::*;
 
 use bevy_oxr::{xr_input::Hand, DefaultXrPlugins};
 use bevy_xpbd_3d::prelude::*;
-use grabber::{EndGrabEvent, Grabbable, StartGrabEvent};
 use input::InputState;
+use vr_hands::grabber::{EndGrabEvent, Grabbable, StartGrabEvent};
 
 mod debug;
-mod fixed_joint_2;
-mod grabber;
 mod input;
 mod scene;
-mod velocity_hands;
+mod vr_hands;
 
 #[bevy_main]
 fn main() {
@@ -24,9 +22,6 @@ fn main() {
         .insert_resource(Gravity(Vec3::new(0.0, -0.1, 0.0)))
         .add_plugins(debug::DebugPlugin)
         .add_plugins(scene::ScenePlugin)
-        .add_plugins(velocity_hands::VelocityHandsPlugin)
-        .add_plugins(grabber::GrabberPlugin)
-        .add_plugins(fixed_joint_2::FixedJoint2Plugin)
         .add_plugins(input::InputPlugin)
         .add_systems(Update, (spawn_cube, start_grabs, end_grabs))
         .run();
