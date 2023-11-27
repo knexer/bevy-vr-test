@@ -23,6 +23,7 @@ fn main() {
         .add_plugins(debug::DebugPlugin)
         .add_plugins(scene::ScenePlugin)
         .add_plugins(input::InputPlugin)
+        .add_plugins(vr_hands::VrHandsPlugin)
         .add_systems(Update, (spawn_cube, start_grabs, end_grabs))
         .run();
 }

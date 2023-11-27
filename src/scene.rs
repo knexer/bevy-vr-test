@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, gltf::Gltf, prelude::*};
 use bevy_oxr::xr_input::{
     trackers::{OpenXRController, OpenXRLeftController, OpenXRRightController, OpenXRTracker},
     Hand,
@@ -15,7 +15,48 @@ pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (setup, spawn_player));
+        app.add_state::<AssetState>()
+            .add_systems(Startup, (setup, spawn_player, load_gltf))
+            .add_systems(Update, check_loaded.run_if(in_state(AssetState::Loading)))
+            .add_systems(OnEnter(AssetState::Loaded), spawn_test_gltf);
+    }
+}
+
+#[derive(States, Clone, Eq, PartialEq, Debug, Default, Hash)]
+pub enum AssetState {
+    #[default]
+    Loading,
+    Loaded,
+}
+
+#[derive(Resource)]
+struct AssetLibHandle(Handle<Gltf>);
+
+#[derive(SystemParam)]
+pub struct AssetLib<'w> {
+    handle: Res<'w, AssetLibHandle>,
+    asset_server: Res<'w, Assets<Gltf>>,
+}
+
+impl AssetLib<'_> {
+    pub fn scene(&self, name: &str) -> Handle<Scene> {
+        let gltf = self.asset_server.get(self.handle.0.clone()).unwrap();
+        gltf.named_scenes[name].clone()
+    }
+
+    pub fn is_loaded(&self) -> bool {
+        self.asset_server.get(self.handle.0.clone()).is_some()
+    }
+}
+
+fn load_gltf(mut commands: Commands, ass: Res<AssetServer>) {
+    let gltf = ass.load("test.gltf");
+    commands.insert_resource(AssetLibHandle(gltf));
+}
+
+fn check_loaded(assets: AssetLib, mut asset_state: ResMut<NextState<AssetState>>) {
+    if assets.is_loaded() {
+        asset_state.set(AssetState::Loaded);
     }
 }
 
@@ -35,18 +76,6 @@ fn setup(
         },
         RigidBody::Static,
         Collider::halfspace(Vec3::Y),
-        CollisionLayers::new([Layer::Default], [Layer::Default]),
-    ));
-    // cube
-    commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
-            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
-            ..default()
-        },
-        RigidBody::Static,
-        Collider::cuboid(0.1, 0.1, 0.1),
         CollisionLayers::new([Layer::Default], [Layer::Default]),
     ));
     // cube
@@ -170,4 +199,12 @@ fn spawn_player(
                 Name::new("Right Grab Point"),
             ));
         });
+}
+
+fn spawn_test_gltf(mut commands: Commands, asset_lib: AssetLib) {
+    commands.spawn(SceneBundle {
+        scene: asset_lib.scene("ship"),
+        transform: Transform::from_xyz(0.0, 0.25, 0.0),
+        ..default()
+    });
 }
