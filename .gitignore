@@ -1,3 +1,4 @@
 /target
 *.DS_Store
 /assets/gen/*
+runtime_libs/arm64-v8a/libopenxr_loader.so
