@@ -50,7 +50,7 @@ impl AssetLib<'_> {
 }
 
 fn load_gltf(mut commands: Commands, ass: Res<AssetServer>) {
-    let gltf = ass.load("test.gltf");
+    let gltf = ass.load("gen/test.gltf");
     commands.insert_resource(AssetLibHandle(gltf));
 }
 
@@ -205,6 +205,12 @@ fn spawn_test_gltf(mut commands: Commands, asset_lib: AssetLib) {
     commands.spawn(SceneBundle {
         scene: asset_lib.scene("ship"),
         transform: Transform::from_xyz(0.0, 0.25, 0.0),
+        ..default()
+    });
+
+    commands.spawn(SceneBundle {
+        scene: asset_lib.scene("hamster"),
+        transform: Transform::from_xyz(0.25, 0.25, 0.0),
         ..default()
     });
 }
