@@ -85,9 +85,10 @@ fn handle_grab_start(
 
 fn update_grabbing_grabbers(
     mut grabbers: Query<(Entity, &GlobalTransform, &mut Grabber)>,
-    mut grabbable: Query<(Entity, &mut Grabbable)>,
+    mut grabbables: Query<&mut Grabbable>,
     spatial_query: SpatialQuery,
     colliders: Query<(&Collider, &GlobalTransform)>,
+    parents: Query<&Parent>,
 ) {
     for (grabber_entity, transform, mut grabber) in grabbers.iter_mut() {
         if !matches!(grabber.state, GrabberState::Grabbing(_)) {
@@ -129,21 +130,30 @@ fn update_grabbing_grabbers(
             (*candidate, sq_distance, closest_point)
         };
 
-        if let Some((closest_candidate, _, closest_point)) = candidates
+        if let Some((mut closest_candidate, _, closest_point)) = candidates
             .iter()
             .map(distance_to)
             .min_by(|(_, d1, _), (_, d2, _)| d1.partial_cmp(d2).unwrap())
         {
-            for (entity, mut grabbable) in grabbable.iter_mut() {
-                grabbable.grabbed_by.retain(|e| *e != grabber_entity);
-                if entity == closest_candidate {
-                    grabbable.grabbed_by.push(grabber_entity);
-                    break;
-                }
+            // Walk up the hierarchy to find the closest grabbable parent
+            while !grabbables.get(closest_candidate).is_ok() {
+                closest_candidate = parents.get(closest_candidate).unwrap().get();
             }
+
+            for mut grabbable in grabbables.iter_mut() {
+                grabbable.grabbed_by.retain(|e| *e != grabber_entity);
+            }
+
+            grabbables
+                .get_mut(closest_candidate)
+                .unwrap()
+                .grabbed_by
+                .push(grabber_entity);
+
+            println!("Grabbing {:?}", closest_candidate);
             grabber.state = GrabberState::Grabbing(Some((closest_candidate, closest_point)));
         } else {
-            for (_, mut grabbable) in grabbable.iter_mut() {
+            for mut grabbable in grabbables.iter_mut() {
                 grabbable.grabbed_by.retain(|e| *e != grabber_entity);
             }
             grabber.state = GrabberState::Grabbing(None);
@@ -191,6 +201,7 @@ fn grab_when_close_enough(
                     ))
                     .id();
 
+                println!("Grabbed {:?}", grabbed_entity);
                 grabber.state = GrabberState::Grabbed(grabbed_entity, joint_id);
             }
         }
@@ -227,6 +238,7 @@ fn handle_grab_end(
 
         grabber.state = GrabberState::Idle;
         if let Some(grabbed_entity) = grabbed_entity {
+            println!("Releasing {:?}", grabbed_entity);
             let mut grabbable = grabbable.get_mut(grabbed_entity).unwrap();
             grabbable.grabbed_by.retain(|e| *e != grabber_entity);
         }

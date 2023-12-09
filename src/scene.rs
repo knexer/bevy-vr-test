@@ -3,6 +3,7 @@ use bevy_oxr::xr_input::{
     trackers::{OpenXRController, OpenXRLeftController, OpenXRRightController, OpenXRTracker},
     Hand,
 };
+use bevy_scene_hook::{HookPlugin, HookedSceneBundle, SceneHook};
 use bevy_xpbd_3d::prelude::*;
 
 use crate::{
@@ -15,7 +16,8 @@ pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<AssetState>()
+        app.add_plugins(HookPlugin)
+            .add_state::<AssetState>()
             .add_systems(Startup, (setup, spawn_player, load_gltf))
             .add_systems(Update, check_loaded.run_if(in_state(AssetState::Loading)))
             .add_systems(OnEnter(AssetState::Loaded), spawn_test_gltf);
@@ -201,6 +203,12 @@ fn spawn_player(
         });
 }
 
+#[derive(Component)]
+struct Anchorable;
+
+#[derive(Component)]
+struct Anchor;
+
 fn spawn_test_gltf(mut commands: Commands, asset_lib: AssetLib) {
     commands.spawn(SceneBundle {
         scene: asset_lib.scene("ship"),
@@ -208,9 +216,43 @@ fn spawn_test_gltf(mut commands: Commands, asset_lib: AssetLib) {
         ..default()
     });
 
-    commands.spawn(SceneBundle {
-        scene: asset_lib.scene("hamster"),
-        transform: Transform::from_xyz(0.25, 0.25, 0.0),
-        ..default()
+    commands.spawn(HookedSceneBundle {
+        scene: SceneBundle {
+            scene: asset_lib.scene("ship"),
+            transform: Transform::from_xyz(0.0, 0.25, 0.0),
+            ..default()
+        },
+        hook: SceneHook::new(
+            |entity, cmds| match entity.get::<Name>().map(|t| t.as_str()) {
+                Some("Anchor") => {
+                    println!("Found anchor!");
+                    cmds.insert(Anchor);
+                }
+                Some(name) => println!("Found {}", name),
+                _ => println!("Found something unnamed"),
+            },
+        ),
     });
+
+    commands
+        .spawn((
+            SceneBundle {
+                scene: asset_lib.scene("hamster"),
+                transform: Transform::from_xyz(0.25, 0.25, 0.0),
+                ..default()
+            },
+            Anchorable,
+            RigidBody::Dynamic,
+            // CollisionLayers::new([Layer::Grabbable, Layer::Default], [Layer::Default]),
+            Grabbable { grabbed_by: vec![] },
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                SpatialBundle::from_transform(Transform::from_xyz(0.0, 0.05, 0.0)),
+                ColliderDensity(1000.0),
+                Collider::cuboid(0.05, 0.1, 0.05),
+                CollisionLayers::new([Layer::Grabbable, Layer::Default], [Layer::Default]),
+                Name::new("Collider"),
+            ));
+        });
 }
