@@ -144,11 +144,8 @@ fn update_grabbing_grabbers(
                 grabbable.grabbed_by.retain(|e| *e != grabber_entity);
             }
 
-            grabbables
-                .get_mut(closest_candidate)
-                .unwrap()
-                .grabbed_by
-                .push(grabber_entity);
+            let mut closest_grabbable = grabbables.get_mut(closest_candidate).unwrap();
+            closest_grabbable.grabbed_by.push(grabber_entity);
 
             println!("Grabbing {:?}", closest_candidate);
             grabber.state = GrabberState::Grabbing(Some((closest_candidate, closest_point)));
