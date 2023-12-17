@@ -19,7 +19,10 @@ impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(HookPlugin)
             .add_systems(Startup, (setup, spawn_player))
-            .add_systems(OnEnter(AssetState::Loaded), spawn_test_gltf);
+            .add_systems(OnEnter(AssetState::Loaded), spawn_test_gltf)
+            .add_systems(Update, log_if_anchorable_found)
+            .register_type::<Anchorable>()
+            .register_type::<Anchor>();
     }
 }
 
@@ -164,10 +167,12 @@ fn spawn_player(
         });
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
 struct Anchorable;
 
-#[derive(Component)]
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
 struct Anchor;
 
 fn spawn_test_gltf(mut commands: Commands, asset_lib: AssetLib) {
@@ -202,7 +207,6 @@ fn spawn_test_gltf(mut commands: Commands, asset_lib: AssetLib) {
                 transform: Transform::from_xyz(0.25, 0.25, 0.0),
                 ..default()
             },
-            Anchorable,
             RigidBody::Dynamic,
             // CollisionLayers::new([Layer::Grabbable, Layer::Default], [Layer::Default]),
             Grabbable { grabbed_by: vec![] },
@@ -223,11 +227,18 @@ fn spawn_test_gltf(mut commands: Commands, asset_lib: AssetLib) {
             transform: Transform::from_xyz(0.0, 0.25, 0.25),
             ..default()
         },
-        Anchorable,
         RigidBody::Dynamic,
         Grabbable { grabbed_by: vec![] },
         ColliderDensity(4000.0),
         Collider::ball(0.16),
         CollisionLayers::new([Layer::Grabbable, Layer::Default], [Layer::Default]),
     ));
+}
+
+fn log_if_anchorable_found(anchorables: Query<&Anchorable>) {
+    if anchorables.is_empty() {
+        println!("NO anchorables!");
+    } else {
+        println!("Found anchorables!");
+    }
 }

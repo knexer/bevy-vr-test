@@ -1,10 +1,12 @@
 use bevy::{ecs::system::SystemParam, gltf::Gltf, prelude::*};
+use bevy_gltf_components::ComponentsFromGltfPlugin;
 
 pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<AssetState>()
+        app.add_plugins(ComponentsFromGltfPlugin)
+            .add_state::<AssetState>()
             .add_systems(Startup, load_gltf)
             .add_systems(Update, check_loaded.run_if(in_state(AssetState::Loading)));
     }

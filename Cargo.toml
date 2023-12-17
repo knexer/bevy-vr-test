@@ -17,6 +17,8 @@ bevy_oxr = { version="0.1.0", default-features = false }
 bevy_xpbd_3d = "0.3.2"
 openxr = { git = "https://github.com/Ralith/openxrs", features = ["mint"] }
 bevy-scene-hook = "9.0.0"
+# bevy_gltf_blueprints = "0.4.0"
+bevy_gltf_components = "0.2.0"
 
 [profile.release]
 lto = "fat"
