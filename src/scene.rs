@@ -255,4 +255,18 @@ fn spawn_test_gltf(mut commands: Commands, asset_lib: AssetLib) {
                 Name::new("Collider"),
             ));
         });
+
+    commands.spawn((
+        SceneBundle {
+            scene: asset_lib.scene("asteroid"),
+            transform: Transform::from_xyz(0.0, 0.25, 0.25),
+            ..default()
+        },
+        Anchorable,
+        RigidBody::Dynamic,
+        Grabbable { grabbed_by: vec![] },
+        ColliderDensity(4000.0),
+        Collider::ball(0.16),
+        CollisionLayers::new([Layer::Grabbable, Layer::Default], [Layer::Default]),
+    ));
 }
