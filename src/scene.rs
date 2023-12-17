@@ -1,4 +1,4 @@
-use bevy::{ecs::system::SystemParam, gltf::Gltf, prelude::*};
+use bevy::prelude::*;
 use bevy_oxr::xr_input::{
     trackers::{OpenXRController, OpenXRLeftController, OpenXRRightController, OpenXRTracker},
     Hand,
@@ -7,6 +7,7 @@ use bevy_scene_hook::{HookPlugin, HookedSceneBundle, SceneHook};
 use bevy_xpbd_3d::prelude::*;
 
 use crate::{
+    assets::{AssetLib, AssetState},
     vr_hands::grabber::{Grabbable, Grabber, GrabberState},
     vr_hands::velocity_tracking::VelocityTracked,
     Layer,
@@ -17,48 +18,8 @@ pub struct ScenePlugin;
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(HookPlugin)
-            .add_state::<AssetState>()
-            .add_systems(Startup, (setup, spawn_player, load_gltf))
-            .add_systems(Update, check_loaded.run_if(in_state(AssetState::Loading)))
+            .add_systems(Startup, (setup, spawn_player))
             .add_systems(OnEnter(AssetState::Loaded), spawn_test_gltf);
-    }
-}
-
-#[derive(States, Clone, Eq, PartialEq, Debug, Default, Hash)]
-pub enum AssetState {
-    #[default]
-    Loading,
-    Loaded,
-}
-
-#[derive(Resource)]
-struct AssetLibHandle(Handle<Gltf>);
-
-#[derive(SystemParam)]
-pub struct AssetLib<'w> {
-    handle: Res<'w, AssetLibHandle>,
-    asset_server: Res<'w, Assets<Gltf>>,
-}
-
-impl AssetLib<'_> {
-    pub fn scene(&self, name: &str) -> Handle<Scene> {
-        let gltf = self.asset_server.get(self.handle.0.clone()).unwrap();
-        gltf.named_scenes[name].clone()
-    }
-
-    pub fn is_loaded(&self) -> bool {
-        self.asset_server.get(self.handle.0.clone()).is_some()
-    }
-}
-
-fn load_gltf(mut commands: Commands, ass: Res<AssetServer>) {
-    let gltf = ass.load("gen/test.gltf");
-    commands.insert_resource(AssetLibHandle(gltf));
-}
-
-fn check_loaded(assets: AssetLib, mut asset_state: ResMut<NextState<AssetState>>) {
-    if assets.is_loaded() {
-        asset_state.set(AssetState::Loaded);
     }
 }
 

@@ -5,6 +5,7 @@ use bevy_xpbd_3d::prelude::*;
 use input::InputState;
 use vr_hands::grabber::{EndGrabEvent, Grabbable, StartGrabEvent};
 
+mod assets;
 mod debug;
 mod input;
 mod scene;
@@ -21,6 +22,7 @@ fn main() {
         })
         .insert_resource(Gravity(Vec3::new(0.0, -0.1, 0.0)))
         .add_plugins(debug::DebugPlugin)
+        .add_plugins(assets::AssetsPlugin)
         .add_plugins(scene::ScenePlugin)
         .add_plugins(input::InputPlugin)
         .add_plugins(vr_hands::VrHandsPlugin)
