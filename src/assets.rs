@@ -1,5 +1,5 @@
 use bevy::{ecs::system::SystemParam, gltf::Gltf, prelude::*};
-use bevy_gltf_components::ComponentsFromGltfPlugin;
+use bevy_gltf_components::{process_loaded_scenes, track_new_gltf, ComponentsFromGltfPlugin};
 
 pub struct AssetsPlugin;
 
@@ -8,7 +8,11 @@ impl Plugin for AssetsPlugin {
         app.add_plugins(ComponentsFromGltfPlugin)
             .add_state::<AssetState>()
             .add_systems(Startup, load_gltf)
-            .add_systems(Update, check_loaded.run_if(in_state(AssetState::Loading)));
+            .add_systems(Update, check_loaded.run_if(in_state(AssetState::Loading)))
+            .add_systems(
+                OnExit(AssetState::Loading),
+                (track_new_gltf, process_loaded_scenes).chain(),
+            );
     }
 }
 
